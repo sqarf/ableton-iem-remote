@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#101410">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Local phone controls for a personal Ableton in-ear monitor mix.">
+    <title>IEM Remote</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to controls</a>
+
+    <header class="app-header">
+      <a class="brand" href="/" aria-label="IEM Remote home">
+        <span class="brand-mark" aria-hidden="true">IEM</span>
+        <span class="brand-copy">
+          <span class="brand-name">Monitor Remote</span>
+          <span class="brand-subtitle">Personal mix control</span>
+        </span>
+      </a>
+
+      <div id="connection-status" class="connection-status is-connecting" role="status" aria-live="polite">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span id="connection-label">Connecting…</span>
+      </div>
+    </header>
+
+    <main id="main-content" class="app-main" tabindex="-1">
+      <div id="error-banner" class="error-banner" role="alert" hidden>
+        <div>
+          <p class="error-title">Something went wrong</p>
+          <p id="error-message" class="error-message"></p>
+        </div>
+        <button id="error-dismiss" class="icon-button" type="button" aria-label="Dismiss error">×</button>
+      </div>
+
+      <section id="member-screen" class="screen member-screen" aria-labelledby="member-title">
+        <div class="intro-card">
+          <p class="eyebrow">Your ears, your mix</p>
+          <h1 id="member-title" tabindex="-1">Who are you?</h1>
+          <p class="intro-copy">Choose your name to open only your in-ear monitor controls.</p>
+          <p class="privacy-note">
+            <span aria-hidden="true">●</span>
+            Controls stay on the local band network
+          </p>
+        </div>
+
+        <div id="member-load-state" class="load-state" role="status">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Loading band members…</span>
+        </div>
+
+        <div id="member-list" class="member-list" aria-label="Band members"></div>
+
+        <button id="config-retry" class="secondary-button retry-button" type="button" hidden>
+          Try loading again
+        </button>
+      </section>
+
+      <section id="mixer-screen" class="screen mixer-screen" aria-labelledby="mixer-title" hidden>
+        <div class="mixer-heading">
+          <button id="change-member" class="back-button" type="button">
+            <span aria-hidden="true">←</span>
+            Change member
+          </button>
+
+          <div class="mix-title-group">
+            <p id="mix-name" class="eyebrow">Personal mix</p>
+            <h1 id="mixer-title" tabindex="-1">Mixer</h1>
+          </div>
+        </div>
+
+        <div id="bridge-alert" class="bridge-alert" role="alert" hidden>
+          <span class="bridge-alert-icon" aria-hidden="true">!</span>
+          <div>
+            <p class="bridge-alert-title">Ableton bridge unavailable</p>
+            <p id="bridge-alert-message">Controls will reconnect automatically when the bridge returns.</p>
+          </div>
+        </div>
+
+        <div class="mixer-toolbar">
+          <div>
+            <p class="section-label">Source levels</p>
+            <p id="fader-help" class="scroll-hint">Drag a fader up for more. Swipe sideways for more sources.</p>
+          </div>
+          <span id="source-count" class="source-count"></span>
+        </div>
+
+        <div id="fader-bank" class="fader-bank" aria-describedby="fader-help" aria-busy="true"></div>
+
+        <div class="reset-card">
+          <div>
+            <h2>Starting mix</h2>
+            <p>Restore all of your source levels to their configured starting values.</p>
+          </div>
+          <button id="reset-mix" class="danger-button" type="button">Reset mix</button>
+        </div>
+      </section>
+
+      <p id="announcement" class="visually-hidden" role="status" aria-live="polite"></p>
+    </main>
+
+    <noscript>
+      <div class="noscript-message">JavaScript is required to control your monitor mix.</div>
+    </noscript>
+  </body>
+</html>

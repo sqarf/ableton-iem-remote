@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/ableton-iem-remote/config.schema.json",
+  "title": "Ableton IEM Remote band configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "server", "levels", "members", "mixes", "sources"],
+  "properties": {
+    "version": { "const": 1 },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port", "writeCoalesceMs", "requestBodyLimitBytes"],
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001f\\u007f]+$"
+        },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "writeCoalesceMs": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "requestBodyLimitBytes": { "type": "integer", "minimum": 256, "maximum": 1048576 }
+      }
+    },
+    "levels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum"],
+      "properties": {
+        "minimum": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maximum": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/member" }
+    },
+    "mixes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/mix" }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/source" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "abletonName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255,
+      "pattern": "^(?!\\s)(?!.*\\s$)[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "mixId"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/label" },
+        "mixId": { "$ref": "#/$defs/id" }
+      }
+    },
+    "mix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "abletonTrack"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/label" },
+        "abletonTrack": { "$ref": "#/$defs/abletonName" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "abletonTrack", "startingLevels"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "$ref": "#/$defs/label" },
+        "abletonTrack": { "$ref": "#/$defs/abletonName" },
+        "startingLevels": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    }
+  },
+  "description": "Cross-record rules such as unique IDs/names, exact starting-level mix keys, and minimum < maximum are additionally enforced by server/config.js."
+}

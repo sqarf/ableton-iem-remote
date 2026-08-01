@@ -1,0 +1,83 @@
+{
+  "version": 1,
+  "server": {
+    "host": "0.0.0.0",
+    "port": 3000,
+    "writeCoalesceMs": 40,
+    "requestBodyLimitBytes": 16384
+  },
+  "levels": {
+    "minimum": 0,
+    "maximum": 1
+  },
+  "members": [
+    { "id": "vocalist", "name": "Vocalist", "mixId": "vocalist" },
+    { "id": "guitarist-1", "name": "Guitarist 1", "mixId": "guitarist-1" },
+    { "id": "guitarist-2", "name": "Guitarist 2", "mixId": "guitarist-2" },
+    { "id": "bassist", "name": "Bassist", "mixId": "bassist" },
+    { "id": "drummer", "name": "Drummer", "mixId": "drummer" }
+  ],
+  "mixes": [
+    { "id": "vocalist", "name": "Vocalist IEM", "abletonTrack": "IEM MIX - Vocalist" },
+    { "id": "guitarist-1", "name": "Guitarist 1 IEM", "abletonTrack": "IEM MIX - Guitarist 1" },
+    { "id": "guitarist-2", "name": "Guitarist 2 IEM", "abletonTrack": "IEM MIX - Guitarist 2" },
+    { "id": "bassist", "name": "Bassist IEM", "abletonTrack": "IEM MIX - Bassist" },
+    { "id": "drummer", "name": "Drummer IEM", "abletonTrack": "IEM MIX - Drummer" }
+  ],
+  "sources": [
+    {
+      "id": "vocal-1",
+      "name": "Vocal 1",
+      "abletonTrack": "IEM SRC - Vocal 1",
+      "startingLevels": { "vocalist": 0.72, "guitarist-1": 0.48, "guitarist-2": 0.48, "bassist": 0.5, "drummer": 0.5 }
+    },
+    {
+      "id": "vocal-2",
+      "name": "Vocal 2",
+      "abletonTrack": "IEM SRC - Vocal 2",
+      "startingLevels": { "vocalist": 0.48, "guitarist-1": 0.48, "guitarist-2": 0.48, "bassist": 0.5, "drummer": 0.5 }
+    },
+    {
+      "id": "guitar-1",
+      "name": "Guitar 1",
+      "abletonTrack": "IEM SRC - Guitar 1",
+      "startingLevels": { "vocalist": 0.45, "guitarist-1": 0.72, "guitarist-2": 0.5, "bassist": 0.5, "drummer": 0.52 }
+    },
+    {
+      "id": "guitar-2",
+      "name": "Guitar 2",
+      "abletonTrack": "IEM SRC - Guitar 2",
+      "startingLevels": { "vocalist": 0.45, "guitarist-1": 0.5, "guitarist-2": 0.72, "bassist": 0.5, "drummer": 0.52 }
+    },
+    {
+      "id": "bass",
+      "name": "Bass",
+      "abletonTrack": "IEM SRC - Bass",
+      "startingLevels": { "vocalist": 0.44, "guitarist-1": 0.5, "guitarist-2": 0.5, "bassist": 0.7, "drummer": 0.58 }
+    },
+    {
+      "id": "kick",
+      "name": "Kick",
+      "abletonTrack": "IEM SRC - Kick",
+      "startingLevels": { "vocalist": 0.42, "guitarist-1": 0.5, "guitarist-2": 0.5, "bassist": 0.58, "drummer": 0.68 }
+    },
+    {
+      "id": "snare",
+      "name": "Snare",
+      "abletonTrack": "IEM SRC - Snare",
+      "startingLevels": { "vocalist": 0.42, "guitarist-1": 0.48, "guitarist-2": 0.48, "bassist": 0.5, "drummer": 0.66 }
+    },
+    {
+      "id": "backing-tracks",
+      "name": "Backing Tracks",
+      "abletonTrack": "IEM SRC - Backing Tracks",
+      "startingLevels": { "vocalist": 0.55, "guitarist-1": 0.55, "guitarist-2": 0.55, "bassist": 0.55, "drummer": 0.55 }
+    },
+    {
+      "id": "click",
+      "name": "Click",
+      "abletonTrack": "IEM SRC - Click",
+      "startingLevels": { "vocalist": 0.38, "guitarist-1": 0.42, "guitarist-2": 0.42, "bassist": 0.44, "drummer": 0.7 }
+    }
+  ]
+}
