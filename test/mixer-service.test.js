@@ -212,6 +212,22 @@ test('failed bridge startup reports an error and can be retried safely', async (
   assert.equal(service.getState('vocalist', 'vocalist').levels['vocal-1'], 0.72);
 });
 
+test('service announces readiness only after every authoritative snapshot is available', async (t) => {
+  const config = validateConfig(await exampleConfig());
+  const bridge = new MockBridge(config);
+  const service = new MixerService({ config, bridge });
+  t.after(() => service.stop());
+
+  const ready = once(service, 'ready');
+  await service.start();
+  await ready;
+
+  for (const member of config.members) {
+    const state = service.getState(member.id, member.mixId);
+    assert.deepEqual(Object.keys(state.levels), config.sources.map(({ id }) => id));
+  }
+});
+
 test('authoritative external bridge changes update state and subscribers', async (t) => {
   const { bridge, service } = await createService();
   t.after(() => service.stop());

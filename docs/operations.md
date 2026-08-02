@@ -108,3 +108,20 @@ must be rejected.
 
 Stopping the mock server discards its in-memory state. It does not touch any
 Live Set.
+
+## Real bridge operation
+
+Do not run `npm start` beside the real device on the same port. In real mode,
+the Max for Live device's `node.script` starts this same HTTP/SSE application
+inside Node for Max. The browser URL and API smoke commands remain unchanged.
+
+The patch exposes explicit server start, stop, rescan, and status messages. A
+rescan stops writes, discards the old mapping generation, resolves every exact
+name/send again, installs fresh observers, reloads authoritative snapshots, and
+then allows existing SSE clients to converge. The server may remain reachable
+while health is `503`; that means the web process is alive but the complete Live
+mapping is intentionally unavailable.
+
+For the first connection and the show-device packaging procedure, follow
+[`max-for-live-integration.md`](max-for-live-integration.md). Normal mock mode
+is still the fastest way to test phones and networking without Live.

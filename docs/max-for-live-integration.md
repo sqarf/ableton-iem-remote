@@ -2,18 +2,36 @@
 
 ## Current status
 
-The regular Node server and `MockBridge` are the implemented/testable vertical
-slice. **Real Max for Live control is not implemented or verified.** The files
-under `ableton/` are editable diagnostics/protocol scaffolding only:
+The real source path is implemented and ready for its first Ableton connection
+test:
 
-- the `.maxpat` opens as source and contains no binary device data;
-- the Node-for-Max script loads `max-api`, frames protocol messages, and offers
-  ping/status diagnostics;
-- it does not start the HTTP server, instantiate a real `MaxBridge`, resolve the
-  Live Set, observe parameters, or write a send.
+- `server/bridges/max-bridge.js` validates/correlates the versioned Max
+  protocol, owns the active mapping generation, and exposes only confirmed
+  values through the normal bridge contract;
+- `ableton/node-for-max-adapter.cjs` starts the validated config,
+  `MixerService`, HTTP/SSE server, retry/rescan lifecycle, and Max transport
+  inside `node.script`;
+- `ableton/live-api-controller.js` performs all-or-nothing exact-name mapping,
+  installs send-value/topology observers, validates generations, writes only
+  known send parameters, and confirms unchanged writes by read-back;
+- `ableton/iem-remote-bridge.maxpat` wires that two-way boundary and triggers a
+  deferred rescan when `live.thisdevice` becomes ready.
 
-No `.amxd` is committed because a trustworthy device must be opened, completed,
-saved, frozen, and tested through the installed Max for Live environment.
+Automated tests exercise configuration, authorization, HTTP/SSE behavior,
+bridge validation, stale generations, timeouts, fake-Max resolution, observer
+updates, and rescan synchronization. They cannot prove the installed
+Ableton/Max `LiveAPI` behavior. No `.amxd` is committed because a trustworthy
+device must be opened, saved, frozen, and tested through the target Max for Live
+environment.
+
+The checked-in `.maxpat` is currently a **development/source-tree patch**, not
+a portable device artifact. Its `node.script` loads the adjacent adapter, and
+that adapter derives the application root from its location before importing
+code from `server/`, serving assets from `public/`, and loading the selected
+file from `config/`. This layout works for the first connection test while Max
+loads files from this repository. Max for Live's freeze/resource collection
+has not yet been shown to preserve that application layout, so a frozen `.amxd`
+must not yet be described as self-contained or portable.
 
 ## Required Live Set convention
 
@@ -37,8 +55,8 @@ input/output, change monitoring, or change audio/MIDI routing.
 
 ## Safe name-to-send resolution algorithm
 
-The completed Max-side controller must perform a complete transaction before
-reporting connected:
+The Max-side controller performs a complete transaction before reporting
+connected:
 
 1. Wait for `live.thisdevice`/the Live API to be available, then enter
    `connecting`. Reject writes during this state.
@@ -61,8 +79,11 @@ reporting connected:
    normalized = (liveValue - min) / (max - min)
    ```
 
-   Apply configured normalized safety limits before writes as a second line of
-   defense. Do not assume all Live/Max versions expose exactly `0..1`.
+   The server validates and clamps finite browser writes to the configured
+   normalized safety limits before sending a bridge command. As a second line
+   of defense, the Max controller validates that every received command is
+   already within those limits and rejects an out-of-range command. Do not
+   assume all Live/Max versions expose exactly `0..1`.
 6. Install a `value` observer for every resolved send. Associate observer
    callbacks with stable `(mixId, sourceId)` IDs—not display names or an array
    position. Read an initial snapshot only after all observers exist.
@@ -71,18 +92,23 @@ reporting connected:
    disconnected.
 
 Names and Live object IDs can become stale after rename, insert/delete,
-return-track reorder, undo/redo, Set load, or device reload. Observe topology
-where the Live API version permits it and schedule a low-priority full re-scan;
-also provide an explicit re-scan command. During rebuild, detach old observers,
-mark disconnected, discard queued writes, and never use cached IDs. Reordering
-is safe only after fresh exact-name resolution and fresh send IDs.
+return-track reorder, undo/redo, Set load, or device reload. The controller
+observes topology at low priority and invalidates immediately; the Node runtime
+then performs one correlated full stop/resolve/snapshot cycle. The patch also
+provides an explicit rescan command. During rebuild, old observers are detached,
+the bridge remains disconnected, queued writes fail, and cached IDs are never
+reused. Reordering is safe only after fresh exact-name resolution and fresh
+send IDs.
 
 ## Write and observer responsibilities
 
 For `set-level`:
 
 1. Require the currently connected mapping generation and known stable IDs.
-2. Require a finite normalized number; clamp to configured bounds.
+2. Require a finite normalized number already within the configured bounds.
+   `MixerService` clamps finite HTTP writes before the bridge boundary; an
+   out-of-range Node-to-Max command is a protocol/safety violation and the Max
+   controller rejects it instead of silently clamping it again.
 3. Convert against the parameter's current finite `min`/`max` and set only its
    `value` through `live.object`/the equivalent Live API wrapper.
 4. Wait for the `live.observer value` callback. Convert and emit the observed
@@ -102,24 +128,24 @@ scheduling and let the server's per-control write coalescing absorb drag traffic
 ## Node-for-Max message protocol
 
 Use one selector plus one JSON object so Max atoms do not become a second API.
-Protocol version `1` is scaffolded in `ableton/node-for-max-adapter.cjs`.
+Every object carries `protocol: "iem-remote"` and `version: 1`.
 
 Node to Max:
 
 ```text
-iem.command {"protocolVersion":1,"type":"resolve","requestId":"n-1","sources":[{"id":"vocal-1","abletonTrack":"IEM SRC - Vocal 1"}],"mixes":[{"id":"vocalist","abletonTrack":"IEM MIX - Vocalist"}],"minimum":0,"maximum":1}
-iem.command {"protocolVersion":1,"type":"set-level","requestId":"n-2","generation":4,"mixId":"vocalist","sourceId":"vocal-1","value":0.61}
-iem.command {"protocolVersion":1,"type":"get-snapshot","requestId":"n-3","generation":4,"mixId":"vocalist"}
-iem.command {"protocolVersion":1,"type":"stop","requestId":"n-4"}
+iem.command {"protocol":"iem-remote","version":1,"type":"resolve","requestId":"node-1","sources":[{"id":"vocal-1","abletonTrack":"IEM SRC - Vocal 1"}],"mixes":[{"id":"vocalist","abletonTrack":"IEM MIX - Vocalist"}],"levels":{"minimum":0,"maximum":1}}
+iem.command {"protocol":"iem-remote","version":1,"type":"set-level","requestId":"node-2","generation":4,"mixId":"vocalist","sourceId":"vocal-1","value":0.61}
+iem.command {"protocol":"iem-remote","version":1,"type":"get-snapshot","requestId":"node-3","generation":4}
+iem.command {"protocol":"iem-remote","version":1,"type":"stop","requestId":"node-4"}
 ```
 
 Max to Node:
 
 ```text
-iem.event {"protocolVersion":1,"type":"status","state":"connecting","connected":false}
-iem.event {"protocolVersion":1,"type":"resolved","requestId":"n-1","generation":4,"snapshot":{"vocalist":{"vocal-1":0.72}}}
-iem.event {"protocolVersion":1,"type":"level","requestId":"n-2","generation":4,"mixId":"vocalist","sourceId":"vocal-1","value":0.61}
-iem.event {"protocolVersion":1,"type":"error","requestId":"n-2","generation":4,"code":"LIVE_OBJECT_UNAVAILABLE","message":"..."}
+iem.event {"protocol":"iem-remote","version":1,"type":"status","state":"connecting","connected":false}
+iem.event {"protocol":"iem-remote","version":1,"type":"resolved","requestId":"node-1","generation":4,"levels":{"vocalist":{"vocal-1":0.72}}}
+iem.event {"protocol":"iem-remote","version":1,"type":"level","requestId":"node-2","generation":4,"mixId":"vocalist","sourceId":"vocal-1","value":0.61}
+iem.event {"protocol":"iem-remote","version":1,"type":"error","requestId":"node-2","generation":4,"code":"LIVE_OBJECT_UNAVAILABLE","message":"Send parameter became unavailable"}
 ```
 
 Requirements for the adapter:
@@ -141,30 +167,74 @@ The protocol is an internal boundary and may be adjusted during implementation,
 but the server-facing contract in [`architecture.md`](architecture.md) must stay
 the same for `MockBridge` and `MaxBridge`.
 
-## Implementation TODOs
+## What remains before rehearsal
 
-The following work is required before `BRIDGE_MODE=max` may exist:
+`npm start` remains explicitly mock-only. The current real development entry
+point is loading `ableton/node-for-max-adapter.cjs` through `node.script` while
+the editable patch resolves files from this repository. It never falls back to
+mock.
 
-1. Add a server-side `MaxBridge` implementing `start`, `stop`, `setLevel`,
-   `getSnapshot`, and the documented `status`/authoritative `level` events.
-2. Make Node for Max bootstrap the same config loader, mixer service, static
-   HTTP/SSE server, and `MaxBridge` used by mock mode. Resolve filesystem paths
-   from the device/project location, not the terminal's working directory.
-3. Replace the scaffold's print sink with a Max-side controller/abstraction that
-   implements the all-or-nothing Live API mapping and observer lifecycle above.
-4. Implement request correlation, mapping generations, timeouts, startup/shutdown,
-   rescan, safe error serialization, and unchanged-value read-back.
-5. Add pure tests for message validation and `MaxBridge` state transitions using
-   a fake Max transport. Ableton-dependent behavior remains a manual integration
-   test.
-6. Add an explicit real-mode startup switch. Unknown bridge modes must fail at
-   startup; real mode must never silently fall back to mock.
-7. Re-run normal server tests unchanged to prove the bridge substitution did
-   not weaken authorization, clamping, or SSE semantics.
+Code work for the source-tree bridge path is complete for this iteration. The
+next gate is environmental validation: load the development patch in a copied
+Set, verify every configured exact name/send, and exercise invalidation and
+direct Live edits. Portable packaging remains separate work: choose and
+implement a frozen resource layout for the adapter plus `server/`, `public/`,
+and `config/`; update resource resolution if Max relocates or flattens those
+files; and prove the result from a fresh offline load outside the repository.
+Only then should the device proceed to the production
+laptop/hotspot/audio-interface rehearsal. Any difference found in the target
+Live/Max versions should be fixed in the editable sources and covered by a
+fake/protocol regression test where possible.
+
+## First development connection test
+
+This is the shortest route to testing Live ↔ web now, before producing a
+distributable frozen device:
+
+1. Work in a copied test Set with transport stopped, outputs safely muted or
+   disconnected, and `npm start` stopped so port `3000` is free.
+2. Use Ableton Live Suite with Max for Live and Max 8.6 or newer (the
+   Node-for-Max bootstrap dynamically imports the repository's ES modules).
+   Run `npm test` and `npm run check` in this repository.
+3. Create the configured normal source tracks and return tracks with the exact,
+   case-sensitive names above. Do not substitute ordinary tracks for returns.
+4. In Max **File Preferences**, temporarily add this repository's `ableton/`
+   directory to the search path. This lets the test device find the adjacent
+   controller and Node adapter while the adapter imports `../server`,
+   `../public`, and `../config` from the working tree.
+5. In Live, create an empty MIDI track named `IEM REMOTE BRIDGE`, add a blank
+   **Max MIDI Effect**, and click **Edit**. Open
+   `ableton/iem-remote-bridge.maxpat` in Max and copy its boxes/patch cords into
+   the blank device patcher.
+6. Save that device as a development-only `.amxd`, reload it once, and open the
+   Max Console. `node.script` supplies `max-api`; do not install it with npm.
+7. Wait for `iem-adapter-status`/`iem-event` logs. Open
+   <http://127.0.0.1:3000/api/health>. It must return `200` and
+   `connected: true` only after the entire mapping resolves. Then open
+   <http://127.0.0.1:3000>.
+8. With outputs still controlled, move one browser fader and verify only the
+   matching source-to-return send moves. Move that send directly in Live and
+   verify the browser follows it. Test one unchanged-value write as well.
+9. Rename one configured source temporarily. Health must become unavailable and
+   writes must stop. Restore the exact name or press **rescan** in the patch;
+   health and a fresh browser snapshot should recover.
+
+If the Max Console reports a missing JavaScript file, fix Max's temporary search
+path before changing code. If health stays unavailable, use the controller's
+error code to check exact names and duplicate names; never work around it with
+track indices.
 
 ## Manual `.amxd` packaging steps
 
-Do this only after the TODOs above are implemented and reviewed:
+These are the remaining packaging acceptance steps, not a claim that the
+current patch can already be frozen into a portable device unchanged. In
+particular, the Node adapter currently expects the repository/application
+directory layout described above. Max may collect device dependencies into a
+different frozen layout; if it does, resource discovery in the adapter must be
+changed and tested before distribution.
+
+Do this after the source-tree Live connection test succeeds and before
+rehearsal:
 
 1. Work in a copy of the target Live Set with playback stopped, master output
    safely controlled, and no audience/performer monitoring connected.
@@ -172,13 +242,17 @@ Do this only after the TODOs above are implemented and reviewed:
    empty MIDI track named `IEM REMOTE BRIDGE`; choose its routing manually.
 3. From Live's browser, drag a blank **Max MIDI Effect** onto that track and
    press its **Edit** button to open the device patcher in Max.
-4. In Max, open `ableton/iem-remote-bridge-scaffold.maxpat` as a second patcher.
-   Copy its boxes into the blank device patcher. Keep the red scaffold warning
-   until the print sink has been replaced by the reviewed Live API controller.
-5. Add `ableton/node-for-max-adapter.cjs` and every completed controller/
-   abstraction to the Max project/device dependencies. Ensure `node.script`
-   resolves the adapter by its packaged relative name; remove absolute developer
-   machine paths.
+4. In Max, open `ableton/iem-remote-bridge.maxpat` as a second patcher and copy
+   its boxes/patch cords into the blank device patcher.
+5. Define a packaged application layout containing
+   `ableton/node-for-max-adapter.cjs`, `ableton/live-api-controller.js`,
+   `server/`, `public/`, and the selected validated config. Add the resources to
+   the Max project/device dependencies, then inspect where Max actually places
+   them when frozen. Ensure `node.script` resolves the adapter by its packaged
+   relative name and that the adapter can resolve every application directory
+   from that frozen location; update the adapter's base-path/resource discovery
+   if the source-tree `../server`, `../public`, and `../config` relationship is
+   not retained. Remove absolute developer-machine paths.
 6. Save the editable patch source separately as `.maxpat`. From the patcher that
    belongs to the Live device, choose **Save As**, name the device
    `Ableton IEM Remote.amxd`, and save it under the User Library's Max MIDI
@@ -187,6 +261,9 @@ Do this only after the TODOs above are implemented and reviewed:
    and other dependencies are collected with the device, then save again.
    Command placement differs slightly by Max version; verify the dependency
    list shows no path into this repository or another user's home directory.
+   Freezing alone is not proof of portability: confirm the Node process can
+   import the server modules and load the static/config resources from the
+   frozen locations.
 8. Close the editor, remove the device from the test track, and load the saved
    `.amxd` fresh from the Live browser. Confirm the Node script and every
    abstraction load without missing-file errors.
@@ -233,7 +310,10 @@ item.
 - [ ] Reset each member separately; compare every result with that member's
   configured starts and verify no other mix changes.
 - [ ] Try cross-mix, unknown source/member/mix, malformed JSON, non-number, and
-  out-of-range writes; verify rejection/clamping occurs before Live control.
+  out-of-range writes. Verify invalid/non-finite input is rejected, finite HTTP
+  values are clamped by `MixerService`, and a deliberately out-of-range
+  Node-to-Max protocol command is rejected by the Max controller, all before
+  Live control.
 
 ### Mapping failure safety
 

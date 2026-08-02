@@ -7,8 +7,10 @@ const files = [
   'server/main.js',
   'server/mixer-service.js',
   'server/bridges/bridge.js',
+  'server/bridges/max-bridge.js',
   'server/bridges/mock-bridge.js',
   'public/app.js',
+  'ableton/live-api-controller.js',
   'ableton/node-for-max-adapter.cjs',
 ];
 
@@ -21,7 +23,7 @@ for (const file of files) {
 const jsonFiles = [
   'config/band.json',
   'config/schema.json',
-  'ableton/iem-remote-bridge-scaffold.maxpat',
+  'ableton/iem-remote-bridge.maxpat',
 ];
 
 for (const file of jsonFiles) JSON.parse(readFileSync(file, 'utf8'));

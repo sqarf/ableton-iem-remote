@@ -1,6 +1,6 @@
 # Architecture and bridge contract
 
-## Implemented mock path
+## Implemented bridge paths
 
 The application has three boundaries:
 
@@ -15,16 +15,16 @@ enforcement, write coalescing, authoritative state, resets, and subscriber
 events. The mock bridge stores values in process memory and emits the same
 authoritative events expected from a real bridge.
 
-The intended real path replaces only the final component:
+The implemented real path replaces only the final component:
 
 ```text
 phone browser  --HTTP/SSE-->  HTTP server + MixerService
                                       |
-                               MaxBridge (TODO)
+                               MaxBridge
                                       |
-                        Node for Max message adapter (TODO)
+                        Node for Max message adapter
                                       |
-                     Max Live API resolver/observers (TODO)
+                     Max Live API resolver/observers
                                       |
                           configured Ableton send parameters
 ```
@@ -85,11 +85,13 @@ track names, return ordering, parameter ranges, or observer timing.
 The HTTP/static server remains available when initial bridge startup fails and
 reports the bridge error through health/config responses. It retries bridge
 startup in the background, allowing open phones to recover through their normal
-SSE reconnection once an authoritative snapshot becomes available.
+SSE behavior once an authoritative snapshot becomes available. Existing SSE
+streams receive a fresh complete snapshot after a successful real-bridge
+rescan; they do not retain a partial previous generation.
 It also exposes `simulateExternalChange(mixId, sourceId, value)` to tests and
 in-process development harnesses so a direct-Ableton-style observer change can
-be exercised. There is intentionally no mock-only HTTP endpoint; mock and future
-real modes keep the same browser API.
+be exercised. There is intentionally no mock-only HTTP endpoint; mock and real
+modes keep the same browser API.
 
 ## Write and synchronization flow
 
@@ -118,11 +120,11 @@ until the server exits; in real mode Ableton retains the parameter value.
   Transport, routing, track volume, devices, front-of-house levels, and global
   Live settings are outside the bridge contract.
 
-## Real-bridge lifecycle still required
+## Real-bridge validation boundary
 
-The Node-for-Max adapter and Max-side resolver are scaffolding, not a completed
-adapter. A real implementation must load the same validated configuration,
-perform an all-or-nothing exact-name resolution, install send-value observers,
-and only then report connected. See
-[`max-for-live-integration.md`](max-for-live-integration.md) for the resolution
-algorithm, message boundary, packaging, and manual tests.
+The Node-for-Max adapter loads the same validated configuration and HTTP stack,
+while the Max-side controller performs all-or-nothing exact-name resolution and
+installs send-value observers before reporting connected. Fake-transport tests
+cover the server boundary; Live API timing and object behavior still require
+the packaging and manual tests in
+[`max-for-live-integration.md`](max-for-live-integration.md).

@@ -6,7 +6,7 @@ function delay(milliseconds) {
     : Promise.resolve();
 }
 
-/** A deterministic in-process implementation of the future Ableton bridge. */
+/** A deterministic in-process implementation of the Ableton bridge contract. */
 export class MockBridge extends Bridge {
   #config;
   #levels = new Map();

@@ -19,7 +19,7 @@ Recommended exact Ableton names are `IEM SRC - <source>` for source tracks and `
 - Regular HTTP level/reset writes and Server-Sent Events for snapshots, authoritative level changes, and bridge status.
 - Server-side validation of member, mix, source, and finite numeric value combinations. A member route can address only the mix assigned to that member.
 - Configurable normalized minimum, maximum, and per-member starting values. Out-of-range finite writes are clamped. Rapid changes are coalesced before bridge calls.
-- A dependency-free mock bridge supporting multiple browsers, persistent in-process values, and simulated external Ableton changes through the same event contract used by a future Max bridge.
+- A dependency-free mock bridge supporting multiple browsers, persistent in-process values, and simulated external Ableton changes through the same event contract used by the real Max bridge.
 - Detection and clear reporting of bridge disconnection. The Max implementation must also reject missing or duplicate track/bus names and unavailable Live API objects rather than risk controlling the wrong parameter.
 - No transport, playback, routing, front-of-house, or global Ableton controls.
 
@@ -31,15 +31,15 @@ The browser is served from `public/`. `server/http-server.js` owns the HTTP/SSE 
 
 `config/band.json` is loaded and fully validated at startup. Public API responses omit Ableton mapping names, so the UI consumes stable IDs and display labels.
 
-The current vertical slice runs through `MockBridge`. A future Node-for-Max adapter will resolve exact source and return-track names with Live API objects, observe send parameter values, and emit confirmed normalized changes. It must not change Ableton routing.
+The default terminal workflow runs through `MockBridge`. The editable real path runs the same service inside Node for Max through `MaxBridge`; its Max `LiveAPI` controller resolves exact source and return-track names, observes send parameters, and emits confirmed normalized changes. It never changes Ableton routing. Protocol/state behavior is covered with fake transports, while actual Live object behavior remains a manual integration gate.
 
 ## Phased implementation plan
 
 1. Configuration model, validator, bridge contract, mock state, and Node HTTP server.
 2. Mobile member selector and mixer.
 3. Permission checks, clamping, coalescing, SSE synchronization, reset, and error states.
-4. Editable Max patch and Node-for-Max adapter with exact-name resolution and observers.
-5. Ableton integration testing, operational hardening, and optional PIN sessions.
+4. Editable Max patch and Node-for-Max adapter with exact-name resolution and observers. **Implemented; awaiting target-Live validation.**
+5. Ableton integration testing, operational hardening, and optional PIN sessions. **Next.**
 
 ## Assumptions and risks
 
@@ -53,3 +53,7 @@ The current vertical slice runs through `MockBridge`. A future Node-for-Max adap
 ## Definition of the first vertical slice
 
 The mock app must start with `npm start`, pass Node built-in tests with `npm test`, serve the phone UI, reject invalid or cross-mix access, clamp safe values, coalesce drag traffic, synchronize multiple SSE clients from authoritative bridge events, reset one member's mix, and document the remaining manual Max work.
+
+## Definition of real-bridge source readiness
+
+The source is ready for an Ableton connection test when the real bridge uses the same validated config/service/HTTP stack, resolves every mapping atomically by exact name, rejects stale generations and malformed protocol events, observes direct Live changes, confirms every write by observation/read-back, recovers through a full rescan, and passes all tests without requiring Ableton. Show readiness additionally requires packaging the editable source in Max for Live and completing the target-hardware manual checklist.

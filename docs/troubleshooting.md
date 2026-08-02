@@ -35,9 +35,9 @@
 - SSE reconnect is automatic, but mobile browsers throttle background tabs.
   Foreground the page; it should receive a fresh snapshot.
 - A connected HTTP server and a disconnected bridge are different states. In
-  mock mode the bridge should normally be connected. In future real mode,
-  missing/duplicate names or stale Live objects must deliberately make the
-  bridge unavailable.
+  mock mode the bridge should normally be connected. In real mode,
+  missing/duplicate names or stale Live objects deliberately make the bridge
+  unavailable.
 - If only one browser looks stale, reload it. If every browser is stale, inspect
   the server/bridge status before changing any Live mapping.
 
@@ -62,11 +62,11 @@
 - Out-of-range finite values are clamped to global configured bounds. Invalid
   value types are rejected rather than coerced.
 
-## Future Max for Live bridge will not connect
+## Max for Live bridge will not connect
 
-The shipped Max files are an editable integration scaffold, not a working real
-bridge. Do not diagnose them as if mock mode proved Live connectivity. Follow
-the status gates and exact-name resolution steps in
+The shipped Max files implement the real source path, but mock/fake-transport
+tests cannot prove the installed Live API environment. Follow the status gates,
+development connection steps, and exact-name resolution details in
 [`max-for-live-integration.md`](max-for-live-integration.md). In particular:
 
 - Each configured source name must match exactly one normal Live track.
@@ -76,6 +76,15 @@ the status gates and exact-name resolution steps in
   send IDs; stale indices/IDs must never be used.
 - Deleted, unavailable, disabled, or out-of-range send parameters must make the
   mapping unavailable.
+- Confirm `npm start` is not already occupying the configured port. The real
+  HTTP server runs inside `node.script`, not in a second terminal process.
+- In a development device, confirm Max can find `node-for-max-adapter.cjs` and
+  `live-api-controller.js` through the repository `ableton/` search path. In a
+  frozen device, inspect collected dependencies instead of adding absolute
+  machine paths.
+- Use the patch's **status** and **rescan** messages and inspect Max Console
+  `iem-adapter-status`/`iem-event` output. A rescan must rebuild the whole
+  mapping; it is not permission to reuse an old Live object ID.
 
 Never “fix” a mapping error by choosing the first same-named track, using a
 remembered index, or changing audio routing automatically.

@@ -174,7 +174,9 @@ The server sends `: keepalive` comments every 15 seconds. Browsers should use
 `EventSource`, listen to the three named events, and allow its automatic
 reconnect. The advertised retry is 2000 ms. There are no durable event IDs or
 event replay; each new connection receives a fresh authoritative snapshot, so
-clients should replace local state from that snapshot.
+clients should replace local state from that snapshot. An existing stream also
+receives a new complete `snapshot` after a real-bridge rescan finishes, so it
+can atomically replace values from the previous mapping generation.
 
 ## Errors
 

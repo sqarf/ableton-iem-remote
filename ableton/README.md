@@ -1,30 +1,31 @@
-# Ableton source status
+# Ableton integration source
 
-This directory intentionally contains editable source, not an `.amxd` binary.
-The repository's working vertical slice uses the mock bridge; the files here do
-**not** yet control Ableton sends.
+This directory contains editable source for the real bridge, not a fabricated
+`.amxd` binary:
 
-- `iem-remote-bridge-scaffold.maxpat` is a plain-text Max patcher scaffold. It
-  starts the Node-for-Max transport, provides start/stop/ping controls, and
-  exposes diagnostic `live.path`, `live.object`, and `live.observer` objects.
-  It does not resolve configured names or issue send writes.
-- `node-for-max-adapter.cjs` is a syntax-valid Node-for-Max message/protocol
-  scaffold using Max's provided `max-api`. It is not loaded by normal
-  `npm start`, and it does not start the HTTP server or implement `MaxBridge`.
+- `iem-remote-bridge.maxpat` wires the Node-for-Max process to the Max
+  `LiveAPI` controller and requests a low-priority rescan when the device is
+  ready;
+- `node-for-max-adapter.cjs` loads the validated band config, `MaxBridge`,
+  `MixerService`, and the same HTTP/SSE server used in mock mode;
+- `live-api-controller.js` resolves exact configured source/return names,
+  observes their send parameters, applies generation-checked writes, and sends
+  confirmed normalized values back to Node.
 
-Do not put the scaffold on a show machine expecting real control. The complete
-resolution algorithm, protocol responsibilities, remaining implementation,
-manual device packaging steps, and test checklist are in
-[`../docs/max-for-live-integration.md`](../docs/max-for-live-integration.md).
+Normal `npm start` deliberately remains the offline mock workflow. Real mode is
+started by `node.script` inside the Max for Live device. The protocol and bridge
+states can be tested without Ableton, but the Live API behavior has not passed
+the target-machine manual checklist until you perform it.
 
-The scaffold JSON can be inspected without Max:
+Source-only checks:
 
 ```sh
-node -e "JSON.parse(require('node:fs').readFileSync('ableton/iem-remote-bridge-scaffold.maxpat', 'utf8'))"
 node --check ableton/node-for-max-adapter.cjs
+node --check ableton/live-api-controller.js
+node -e "JSON.parse(require('node:fs').readFileSync('ableton/iem-remote-bridge.maxpat', 'utf8'))"
 ```
 
-Opening/saving a real `.amxd` requires Ableton Live Suite and Max for Live. The
-generated device should remain uncommitted unless it is intentionally treated
-as a release artifact; the editable `.maxpat`/JavaScript sources are the review
-source of truth.
+Opening/saving a real `.amxd` requires Ableton Live Suite and Max for Live.
+Follow the developer test, packaging, and safety steps in
+[`../docs/max-for-live-integration.md`](../docs/max-for-live-integration.md).
+Keep the `.maxpat` and JavaScript sources as the review source of truth.

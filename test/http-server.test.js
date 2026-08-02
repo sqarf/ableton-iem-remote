@@ -309,4 +309,18 @@ test('external bridge changes and bridge loss propagate through SSE and health',
   ));
   assert.equal(write.response.status, 503);
   assert.equal(write.value.error.code, 'BRIDGE_UNAVAILABLE');
+
+  await app.service.stop();
+  await app.service.start();
+  let recovered;
+  for (let index = 0; index < 4; index += 1) {
+    const event = await stream.nextEvent();
+    if (event.event === 'snapshot') {
+      recovered = event;
+      break;
+    }
+  }
+  assert.equal(recovered?.event, 'snapshot');
+  assert.equal(recovered.data.bridge.connected, true);
+  assert.equal(recovered.data.levels['vocal-1'], 0.29);
 });

@@ -113,6 +113,9 @@ export class MixerService extends EventEmitter {
       }
       this.#status = normalizeStatus(this.#bridge.getStatus?.() ?? this.#bridge.status);
       this.#started = true;
+      // Existing SSE streams survive a real-bridge rescan. Tell the HTTP layer
+      // that a complete fresh authoritative snapshot is available again.
+      this.emit('ready');
       return this.#status;
     } catch (error) {
       this.#started = false;

@@ -570,6 +570,7 @@ function consumeAuthoritativePayload(rawPayload, eventName = "message") {
     const bridgePayload = bridge || payload;
     if (typeof bridgePayload.connected === "boolean" || typeof bridgePayload.state === "string") {
       app.bridge = normalizeBridge(bridgePayload);
+      if (!app.bridge.connected) markAuthoritativeSnapshotUnavailable();
       updateConnectionStatus();
       updateBridgeAlert();
       applied = true;
@@ -793,11 +794,22 @@ function setFadersDisabled(disabled) {
 }
 
 function markAuthoritativeSnapshotReady() {
-  app.hasAuthoritativeSnapshot = true;
+  const usable = app.bridge.connected;
+  app.hasAuthoritativeSnapshot = usable;
   clearError();
-  elements.faderBank.setAttribute("aria-busy", "false");
-  elements.resetMix.disabled = app.resetInProgress;
-  setFadersDisabled(app.resetInProgress);
+  elements.faderBank.setAttribute("aria-busy", usable ? "false" : "true");
+  elements.resetMix.disabled = !usable || app.resetInProgress;
+  setFadersDisabled(!usable || app.resetInProgress);
+}
+
+function markAuthoritativeSnapshotUnavailable() {
+  app.hasAuthoritativeSnapshot = false;
+  app.sourceRevisions.clear();
+  app.draggingSources.clear();
+  cancelQueuedWrites();
+  elements.faderBank.setAttribute("aria-busy", "true");
+  elements.resetMix.disabled = true;
+  setFadersDisabled(true);
 }
 
 function findFader(sourceId) {

@@ -45,7 +45,7 @@ export async function main() {
   const bridgeMode = (process.env.BRIDGE_MODE || 'mock').toLowerCase();
   if (bridgeMode !== 'mock') {
     throw new Error(
-      `Unsupported BRIDGE_MODE "${bridgeMode}". Only "mock" is available; the Max for Live adapter is future work.`,
+      `Unsupported BRIDGE_MODE "${bridgeMode}". This terminal entry point is mock-only; real mode starts inside Max for Live through ableton/node-for-max-adapter.cjs.`,
     );
   }
 

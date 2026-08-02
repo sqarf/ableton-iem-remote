@@ -196,6 +196,14 @@ function openEventStream(request, response, url, service) {
     }
   };
   const onStatus = (bridge) => writeEvent('status', { bridge });
+  const onReady = () => {
+    try {
+      writeEvent('snapshot', service.getState(memberId, mixId));
+    } catch {
+      // A simultaneous stop will publish another status; the stream can stay
+      // open for the next completed bridge generation.
+    }
+  };
   const onDrain = () => {
     if (closed) return;
     blocked = false;
@@ -207,6 +215,7 @@ function openEventStream(request, response, url, service) {
   };
   service.on('level', onLevel);
   service.on('status', onStatus);
+  service.on('ready', onReady);
   response.on('drain', onDrain);
 
   const keepAlive = setInterval(() => writeRaw(': keepalive\n\n'), 15_000);
@@ -217,6 +226,7 @@ function openEventStream(request, response, url, service) {
     clearInterval(keepAlive);
     service.off('level', onLevel);
     service.off('status', onStatus);
+    service.off('ready', onReady);
     response.off('drain', onDrain);
   };
   request.once('close', close);

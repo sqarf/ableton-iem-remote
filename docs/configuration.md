@@ -71,7 +71,7 @@ a partially working mixer.
 
 The exact-name mapping has two independent kinds of uniqueness: names should be
 unique in configuration, and each configured name must resolve to exactly one
-Live object. The future real bridge must reject zero or multiple exact matches
+Live object. The real bridge rejects zero or multiple exact matches
 in the Live Set. It must not choose the first duplicate or fall back to a saved
 track/return index.
 
@@ -89,8 +89,8 @@ track/return index.
 5. Run `npm test` and `npm run check`.
 6. Start with `npm start`; startup validation will report the failing field if
    the JSON shape or relationships are invalid.
-7. In mock mode, select every member and test a write plus reset. For a future
-   real bridge, complete the full manual Ableton checklist before rehearsal.
+7. In mock mode, select every member and test a write plus reset. In real mode,
+   complete the full manual Ableton checklist before rehearsal.
 
 Changing `levels` or `startingLevels` never changes Ableton routing. A reset is
 an explicit member action and writes that member's configured starting values;
@@ -104,6 +104,7 @@ HOST=127.0.0.1 PORT=3100 npm start
 BRIDGE_MODE=mock npm start
 ```
 
-`BRIDGE_MODE` defaults to `mock`. Treat any future real-mode value as
-unsupported until the Max adapter described in the integration guide exists
-and passes its manual tests.
+`BRIDGE_MODE` defaults to `mock`, and this terminal entry point accepts only
+`mock`. Real mode starts explicitly inside the Max for Live device through
+`ableton/node-for-max-adapter.cjs`; unknown terminal modes fail instead of
+silently falling back to mock.

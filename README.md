@@ -5,11 +5,13 @@ plain Node.js server hosts the phone UI, validates which monitor mix a selected
 member may control, and synchronizes authoritative send values over
 Server-Sent Events (SSE). Audio remains entirely inside Ableton Live.
 
-The current vertical slice is fully usable in **mock mode**. It simulates the
-Ableton send state, so the UI, authorization, validation, reset behavior, and
-multi-browser synchronization can be tested without Live or Max for Live.
-Real Ableton control is not implemented or verified yet; editable integration
-scaffolding and the exact remaining work are documented in
+The app is fully usable in **mock mode** for testing without Live. The
+repository also contains the complete editable real bridge path: a tested
+server-side `MaxBridge`, a Node-for-Max server bootstrap, a Max `LiveAPI`
+controller, and a wired `.maxpat` source. That real path is ready for its first
+Ableton connection test, but it cannot be certified by automated tests alone;
+it still needs packaging and the manual safety checklist on the target
+Live/Max versions. See
 [`docs/max-for-live-integration.md`](docs/max-for-live-integration.md).
 
 ## Quick start
@@ -40,6 +42,16 @@ For an end-to-end curl and two-browser check, follow
 [`docs/operations.md`](docs/operations.md). The API and SSE payloads are listed
 in [`docs/api.md`](docs/api.md).
 
+## First Ableton connection
+
+You can begin the Live ↔ web test now. Use a muted copied Set, create the exact
+configured source/return names, and copy
+`ableton/iem-remote-bridge.maxpat` into a blank Max MIDI Effect. The device's
+`node.script` starts the real HTTP server; do not run `npm start` at the same
+time. Follow the complete
+[development connection procedure](docs/max-for-live-integration.md#first-development-connection-test)
+before moving any send.
+
 ## Project map
 
 - `config/band.json` — members, mixes, exact Ableton names, limits, starts, and
@@ -48,8 +60,8 @@ in [`docs/api.md`](docs/api.md).
   interchangeable bridges.
 - `public/` — portrait-first plain HTML/CSS/JavaScript interface.
 - `test/` — tests using Node's built-in test runner.
-- `ableton/` — editable Max/Node-for-Max integration scaffold; no fabricated
-  `.amxd` binary.
+- `ableton/` — editable Max patch, LiveAPI controller, and Node-for-Max real
+  server entry point; no fabricated `.amxd` binary.
 - `docs/` — API, configuration, network operations, architecture,
   troubleshooting, and Ableton integration runbooks.
 - `PROJECT.md` — product scope and assumptions.
@@ -62,8 +74,9 @@ can select any configured member, although the server still prevents a member
 route from controlling a different mix. Use only on a trusted, isolated band
 network until PIN-backed sessions or real accounts are added.
 
-The mock bridge proves the web control path, not Live API correctness. Do not
-use a future real bridge in a show until every mapping and failure case in the
+The mock bridge and fake-Max tests prove the web/protocol path, not behavior of
+the installed Live Object Model. Do not use the real bridge in a show until
+every mapping and failure case in the
 [manual Ableton checklist](docs/max-for-live-integration.md#manual-integration-test-checklist)
 has passed against the exact Live Set and Ableton/Max versions used on stage.
 
