@@ -37,12 +37,12 @@ must not yet be described as self-contained or portable.
 
 Use these exact, case-sensitive names unless the JSON is deliberately edited:
 
-- source tracks: `IEM SRC - Vocal 1`, `IEM SRC - Vocal 2`,
-  `IEM SRC - Guitar 1`, `IEM SRC - Guitar 2`, `IEM SRC - Bass`,
-  `IEM SRC - Kick`, `IEM SRC - Snare`, `IEM SRC - Backing Tracks`, and
-  `IEM SRC - Click`;
-- return tracks: `IEM MIX - Vocalist`, `IEM MIX - Guitarist 1`,
-  `IEM MIX - Guitarist 2`, `IEM MIX - Bassist`, and `IEM MIX - Drummer`.
+- source tracks: `IEM SRC - Click`, `IEM SRC - Guide Track`,
+  `IEM SRC - Coordinator`, `IEM SRC - Main Vocals`,
+  `IEM SRC - Back Vocals`, `IEM SRC - Guitar 1`, `IEM SRC - Guitar 2`,
+  `IEM SRC - Bass`, `IEM SRC - Kick`, and `IEM SRC - Samples`;
+- return tracks: `IEM MIX - Dans`, `IEM MIX - Kristaps`,
+  `IEM MIX - Jānis`, `IEM MIX - Oskars`, and `IEM MIX - Dāvis`.
 
 These are values in `source.abletonTrack` and `mix.abletonTrack`, not API IDs.
 Source names must resolve among normal tracks; mix names must resolve among
@@ -133,8 +133,8 @@ Every object carries `protocol: "iem-remote"` and `version: 1`.
 Node to Max:
 
 ```text
-iem.command {"protocol":"iem-remote","version":1,"type":"resolve","requestId":"node-1","sources":[{"id":"vocal-1","abletonTrack":"IEM SRC - Vocal 1"}],"mixes":[{"id":"vocalist","abletonTrack":"IEM MIX - Vocalist"}],"levels":{"minimum":0,"maximum":1}}
-iem.command {"protocol":"iem-remote","version":1,"type":"set-level","requestId":"node-2","generation":4,"mixId":"vocalist","sourceId":"vocal-1","value":0.61}
+iem.command {"protocol":"iem-remote","version":1,"type":"resolve","requestId":"node-1","sources":[{"id":"main-vocals","abletonTrack":"IEM SRC - Main Vocals"}],"mixes":[{"id":"vocalist","abletonTrack":"IEM MIX - Dans"}],"levels":{"minimum":0,"maximum":1}}
+iem.command {"protocol":"iem-remote","version":1,"type":"set-level","requestId":"node-2","generation":4,"mixId":"vocalist","sourceId":"main-vocals","value":0.61}
 iem.command {"protocol":"iem-remote","version":1,"type":"get-snapshot","requestId":"node-3","generation":4}
 iem.command {"protocol":"iem-remote","version":1,"type":"stop","requestId":"node-4"}
 ```
@@ -143,8 +143,8 @@ Max to Node:
 
 ```text
 iem.event {"protocol":"iem-remote","version":1,"type":"status","state":"connecting","connected":false}
-iem.event {"protocol":"iem-remote","version":1,"type":"resolved","requestId":"node-1","generation":4,"levels":{"vocalist":{"vocal-1":0.72}}}
-iem.event {"protocol":"iem-remote","version":1,"type":"level","requestId":"node-2","generation":4,"mixId":"vocalist","sourceId":"vocal-1","value":0.61}
+iem.event {"protocol":"iem-remote","version":1,"type":"resolved","requestId":"node-1","generation":4,"levels":{"vocalist":{"main-vocals":0}}}
+iem.event {"protocol":"iem-remote","version":1,"type":"level","requestId":"node-2","generation":4,"mixId":"vocalist","sourceId":"main-vocals","value":0.61}
 iem.event {"protocol":"iem-remote","version":1,"type":"error","requestId":"node-2","generation":4,"code":"LIVE_OBJECT_UNAVAILABLE","message":"Send parameter became unavailable"}
 ```
 

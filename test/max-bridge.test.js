@@ -91,7 +91,7 @@ test('MaxBridge resolves exact configured names and serves its authoritative cac
 
   const commandCount = transport.commands.length;
   const snapshot = await bridge.getSnapshot('vocalist');
-  assert.equal(snapshot['vocal-1'], config.sources[0].startingLevels.vocalist);
+  assert.equal(snapshot['main-vocals'], config.sources[0].startingLevels.vocalist);
   assert.equal(transport.commands.length, commandCount, 'complete cached snapshot avoids a round trip');
   assert.equal(Object.isFrozen(snapshot), true);
 });
@@ -113,14 +113,14 @@ test('an observer level delivered synchronously after resolved updates the start
   transport.reply(event('level', {
     generation: 11,
     mixId: 'vocalist',
-    sourceId: 'vocal-1',
+    sourceId: 'main-vocals',
     value: 0.91,
   }));
 
   assert.equal(bridge.generation, 11, 'resolution activates before the start promise resumes');
-  assert.deepEqual(updates, [{ mixId: 'vocalist', sourceId: 'vocal-1', value: 0.91 }]);
+  assert.deepEqual(updates, [{ mixId: 'vocalist', sourceId: 'main-vocals', value: 0.91 }]);
   await starting;
-  assert.equal((await bridge.getSnapshot('vocalist'))['vocal-1'], 0.91);
+  assert.equal((await bridge.getSnapshot('vocalist'))['main-vocals'], 0.91);
   assert.equal(bridge.status.connected, true);
 });
 
@@ -132,13 +132,13 @@ test('setLevel resolves only from its matching authoritative confirmation and em
 
   const updates = [];
   bridge.on('level', (update) => updates.push(update));
-  const write = bridge.setLevel('vocalist', 'vocal-1', 0.333);
+  const write = bridge.setLevel('vocalist', 'main-vocals', 0.333);
   const command = transport.commands.at(-1);
   assert.deepEqual(command, event('set-level', {
     requestId: command.requestId,
     generation: 2,
     mixId: 'vocalist',
-    sourceId: 'vocal-1',
+    sourceId: 'main-vocals',
     value: 0.333,
   }));
 
@@ -146,16 +146,16 @@ test('setLevel resolves only from its matching authoritative confirmation and em
     requestId: command.requestId,
     generation: 2,
     mixId: 'vocalist',
-    sourceId: 'vocal-1',
+    sourceId: 'main-vocals',
     value: 0.3329,
   });
   transport.reply(confirmation);
   const result = await write;
   transport.reply(confirmation);
 
-  assert.deepEqual(result, { mixId: 'vocalist', sourceId: 'vocal-1', value: 0.3329 });
+  assert.deepEqual(result, { mixId: 'vocalist', sourceId: 'main-vocals', value: 0.3329 });
   assert.deepEqual(updates, [result], 'a duplicate correlated response is ignored');
-  assert.equal((await bridge.getSnapshot('vocalist'))['vocal-1'], 0.3329);
+  assert.equal((await bridge.getSnapshot('vocalist'))['main-vocals'], 0.3329);
 });
 
 test('current-generation observed changes update the cache while stale events are ignored', async (t) => {
@@ -192,7 +192,7 @@ test('invalid resolution data fails closed and never exposes a partial mapping',
   const starting = bridge.start();
   const command = transport.commands.at(-1);
   const levels = configuredLevels(config);
-  delete levels.vocalist['vocal-1'];
+  delete levels.vocalist['main-vocals'];
   transport.reply(event('resolved', {
     requestId: command.requestId,
     generation: 1,
@@ -218,13 +218,13 @@ test('a mismatched write confirmation invalidates the connection', async (t) => 
   t.after(() => bridge.stop());
   await startResolved(harness, 3);
 
-  const write = bridge.setLevel('vocalist', 'vocal-1', 0.4);
+  const write = bridge.setLevel('vocalist', 'main-vocals', 0.4);
   const command = transport.commands.at(-1);
   transport.reply(event('level', {
     requestId: command.requestId,
     generation: 3,
     mixId: 'vocalist',
-    sourceId: 'vocal-2',
+    sourceId: 'back-vocals',
     value: 0.4,
   }));
 
@@ -232,7 +232,7 @@ test('a mismatched write confirmation invalidates the connection', async (t) => 
   assert.equal(bridge.status.state, 'error');
   assert.equal(bridge.status.connected, false);
   await assert.rejects(
-    bridge.setLevel('vocalist', 'vocal-1', 0.4),
+    bridge.setLevel('vocalist', 'main-vocals', 0.4),
     { code: 'BRIDGE_UNAVAILABLE' },
   );
 });
@@ -246,7 +246,7 @@ test('a newer unsolicited generation disconnects until a fresh resolve', async (
   transport.reply(event('level', {
     generation: 3,
     mixId: 'vocalist',
-    sourceId: 'vocal-1',
+    sourceId: 'main-vocals',
     value: 0.4,
   }));
 
@@ -290,7 +290,7 @@ test('disconnect and request-scoped adapter errors reject pending writes appropr
   t.after(() => bridge.stop());
   await startResolved(harness, 5);
 
-  const rejectedWrite = bridge.setLevel('vocalist', 'vocal-1', 0.4);
+  const rejectedWrite = bridge.setLevel('vocalist', 'main-vocals', 0.4);
   const rejectedCommand = transport.commands.at(-1);
   transport.reply(event('error', {
     requestId: rejectedCommand.requestId,
@@ -307,7 +307,7 @@ test('disconnect and request-scoped adapter errors reject pending writes appropr
   );
   assert.equal(bridge.status.connected, true, 'a scoped write failure does not discard the mapping');
 
-  const disconnectedWrite = bridge.setLevel('vocalist', 'vocal-1', 0.5);
+  const disconnectedWrite = bridge.setLevel('vocalist', 'main-vocals', 0.5);
   transport.reply(event('status', {
     state: 'disconnected',
     message: 'Live set closed while resolving IEM SRC - Vocal 1',
@@ -334,7 +334,7 @@ test('adapter connecting status invalidates an active generation before rebuild'
   assert.equal(bridge.status.connected, false);
   assert.ok(statuses.some(({ state }) => state === 'disconnected'));
   await assert.rejects(
-    bridge.setLevel('vocalist', 'vocal-1', 0.4),
+    bridge.setLevel('vocalist', 'main-vocals', 0.4),
     { code: 'BRIDGE_UNAVAILABLE' },
   );
 });
@@ -344,7 +344,7 @@ test('stop rejects in-flight work, sends stop, and removes the transport listene
   const { bridge, transport } = harness;
   await startResolved(harness, 1);
 
-  const write = bridge.setLevel('vocalist', 'vocal-1', 0.5);
+  const write = bridge.setLevel('vocalist', 'main-vocals', 0.5);
   const stopping = bridge.stop();
   await assert.rejects(write, { code: 'BRIDGE_STOPPED' });
   const stopCommand = transport.commands.at(-1);
@@ -390,11 +390,11 @@ test('transport send failures and invalid local writes are rejected before autho
   await startResolved(harness, 1);
 
   const commandCount = transport.commands.length;
-  await assert.rejects(bridge.setLevel('missing', 'vocal-1', 0.5), { code: 'UNKNOWN_MIX' });
+  await assert.rejects(bridge.setLevel('missing', 'main-vocals', 0.5), { code: 'UNKNOWN_MIX' });
   await assert.rejects(bridge.setLevel('vocalist', 'missing', 0.5), { code: 'UNKNOWN_SOURCE' });
-  await assert.rejects(bridge.setLevel('vocalist', 'vocal-1', Number.NaN), {
+  await assert.rejects(bridge.setLevel('vocalist', 'main-vocals', Number.NaN), {
     code: 'INVALID_LEVEL',
   });
-  await assert.rejects(bridge.setLevel('vocalist', 'vocal-1', 2), { code: 'INVALID_LEVEL' });
+  await assert.rejects(bridge.setLevel('vocalist', 'main-vocals', 2), { code: 'INVALID_LEVEL' });
   assert.equal(transport.commands.length, commandCount);
 });

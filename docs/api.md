@@ -35,8 +35,8 @@ Member/mix state (also the SSE `snapshot` payload):
   "mixId": "vocalist",
   "revision": 0,
   "levels": {
-    "vocal-1": 0.72,
-    "vocal-2": 0.48
+    "main-vocals": 0,
+    "back-vocals": 0
   },
   "bridge": {
     "state": "connected",
@@ -55,7 +55,7 @@ Authoritative level update (the PUT response and SSE `level` payload):
 {
   "memberId": "vocalist",
   "mixId": "vocalist",
-  "sourceId": "vocal-1",
+  "sourceId": "main-vocals",
   "value": 0.61,
   "revision": 1
 }
@@ -90,13 +90,13 @@ Returns browser-safe configuration:
   "version": 1,
   "levels": { "minimum": 0, "maximum": 1 },
   "members": [
-    { "id": "vocalist", "name": "Vocalist", "mixId": "vocalist" }
+    { "id": "vocalist", "name": "Dans", "mixId": "vocalist" }
   ],
   "mixes": [
-    { "id": "vocalist", "name": "Vocalist IEM" }
+    { "id": "vocalist", "name": "Dans IEM" }
   ],
   "sources": [
-    { "id": "vocal-1", "name": "Vocal 1" }
+    { "id": "main-vocals", "name": "Main Vocals" }
   ],
   "bridge": {
     "state": "connected",
@@ -158,7 +158,7 @@ Subsequent confirmed changes for that exact mix are:
 
 ```text
 event: level
-data: {"memberId":"vocalist","mixId":"vocalist","sourceId":"vocal-1","value":0.61,"revision":1}
+data: {"memberId":"vocalist","mixId":"vocalist","sourceId":"main-vocals","value":0.61,"revision":1}
 
 ```
 
@@ -216,7 +216,7 @@ curl -N 'http://127.0.0.1:3000/api/events?memberId=vocalist&mixId=vocalist'
 curl -i -X PUT \
   -H 'Content-Type: application/json' \
   --data '{"value":0.61}' \
-  http://127.0.0.1:3000/api/members/vocalist/mixes/vocalist/sources/vocal-1
+  http://127.0.0.1:3000/api/members/vocalist/mixes/vocalist/sources/main-vocals
 
 curl -i -X POST \
   http://127.0.0.1:3000/api/members/vocalist/mixes/vocalist/reset

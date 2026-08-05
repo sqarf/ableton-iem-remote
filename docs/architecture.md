@@ -54,7 +54,7 @@ bridge.emit('status', {
 
 bridge.emit('level', {
   mixId: 'vocalist',
-  sourceId: 'vocal-1',
+  sourceId: 'main-vocals',
   value: 0.72
 });
 ```

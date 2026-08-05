@@ -8,7 +8,7 @@ Each member chooses their identity and sees only the source sends feeding their 
 
 ## Initial members and sources
 
-The example configuration contains Vocalist, Guitarist 1, Guitarist 2, Bassist, and Drummer, with independent sends from Vocal 1, Vocal 2, Guitar 1, Guitar 2, Bass, Kick, Snare, Backing Tracks, and Click. These are editable examples, not hard-coded requirements.
+The band configuration contains Dans, Kristaps, Jānis, Oskars, and Dāvis, with independent sends from Click, Guide Track, Coordinator, Main Vocals, Back Vocals, Guitar 1, Guitar 2, Bass, Kick, and Samples. These values remain configuration rather than application constants.
 
 Recommended exact Ableton names are `IEM SRC - <source>` for source tracks and `IEM MIX - <member>` for return-track monitor buses.
 

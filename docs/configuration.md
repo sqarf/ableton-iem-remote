@@ -21,21 +21,21 @@ a partially working mixer.
     "maximum": 1
   },
   "members": [
-    { "id": "vocalist", "name": "Vocalist", "mixId": "vocalist" }
+    { "id": "vocalist", "name": "Dans", "mixId": "vocalist" }
   ],
   "mixes": [
     {
       "id": "vocalist",
-      "name": "Vocalist IEM",
-      "abletonTrack": "IEM MIX - Vocalist"
+      "name": "Dans IEM",
+      "abletonTrack": "IEM MIX - Dans"
     }
   ],
   "sources": [
     {
-      "id": "vocal-1",
-      "name": "Vocal 1",
-      "abletonTrack": "IEM SRC - Vocal 1",
-      "startingLevels": { "vocalist": 0.72 }
+      "id": "main-vocals",
+      "name": "Main Vocals",
+      "abletonTrack": "IEM SRC - Main Vocals",
+      "startingLevels": { "vocalist": 0 }
     }
   ]
 }

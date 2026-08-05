@@ -18,16 +18,16 @@ test('mock bridge starts with configured values and persists accepted writes', a
   await bridge.start();
   assert.equal(bridge.status.connected, true);
   assert.equal(
-    bridge.getSnapshot('vocalist')['vocal-1'],
+    bridge.getSnapshot('vocalist')['main-vocals'],
     config.sources[0].startingLevels.vocalist,
   );
 
   const levelEvent = once(bridge, 'level');
-  const result = await bridge.setLevel('vocalist', 'vocal-1', 0.31);
+  const result = await bridge.setLevel('vocalist', 'main-vocals', 0.31);
 
-  assert.deepEqual(result, { mixId: 'vocalist', sourceId: 'vocal-1', value: 0.31 });
+  assert.deepEqual(result, { mixId: 'vocalist', sourceId: 'main-vocals', value: 0.31 });
   assert.deepEqual((await levelEvent)[0], result);
-  assert.equal(bridge.getSnapshot('vocalist')['vocal-1'], 0.31);
+  assert.equal(bridge.getSnapshot('vocalist')['main-vocals'], 0.31);
 });
 
 test('mock bridge emits direct Ableton-style external changes', async (t) => {
@@ -51,13 +51,13 @@ test('mock bridge refuses writes while disconnected and rejects invalid targets'
   t.after(() => bridge.stop());
 
   await assert.rejects(
-    bridge.setLevel('vocalist', 'vocal-1', 0.5),
+    bridge.setLevel('vocalist', 'main-vocals', 0.5),
     /not connected/i,
   );
 
   await bridge.start();
   await assert.rejects(
-    bridge.setLevel('missing', 'vocal-1', 0.5),
+    bridge.setLevel('missing', 'main-vocals', 0.5),
     /unknown mix/i,
   );
   await assert.rejects(
@@ -65,7 +65,7 @@ test('mock bridge refuses writes while disconnected and rejects invalid targets'
     /unknown source/i,
   );
   await assert.rejects(
-    bridge.setLevel('vocalist', 'vocal-1', Number.NaN),
+    bridge.setLevel('vocalist', 'main-vocals', Number.NaN),
     /finite number/i,
   );
 });

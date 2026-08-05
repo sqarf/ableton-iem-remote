@@ -104,7 +104,7 @@ test('server exposes health, public config, and static phone assets', async (t) 
   const publicConfig = await json(await fetch(`${app.baseUrl}/api/config`));
   assert.equal(publicConfig.response.status, 200);
   assert.equal(publicConfig.value.members.length, 5);
-  assert.equal(publicConfig.value.sources.length, 9);
+  assert.equal(publicConfig.value.sources.length, 10);
   assert.equal(JSON.stringify(publicConfig.value).includes('abletonTrack'), false);
 
   const page = await fetch(`${app.baseUrl}/`);
@@ -154,8 +154,8 @@ test('HTTP writes clamp values and reject cross-mix permissions', async (t) => {
 test('HTTP API reports malformed and invalid requests without mutating state', async (t) => {
   const app = await createRunningServer();
   t.after(() => app.stop());
-  const endpoint = `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/vocal-1`;
-  const original = app.service.getState('vocalist', 'vocalist').levels['vocal-1'];
+  const endpoint = `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/main-vocals`;
+  const original = app.service.getState('vocalist', 'vocalist').levels['main-vocals'];
 
   const cases = [
     {
@@ -193,7 +193,7 @@ test('HTTP API reports malformed and invalid requests without mutating state', a
     assert.equal(response.status, testCase.expected);
     assert.equal(typeof (await response.json()).error.code, 'string');
   }
-  assert.equal(app.service.getState('vocalist', 'vocalist').levels['vocal-1'], original);
+  assert.equal(app.service.getState('vocalist', 'vocalist').levels['main-vocals'], original);
 
   const unknownSource = await fetch(
     `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/not-a-source`,
@@ -228,7 +228,7 @@ test('two SSE clients receive the same authoritative level update', async (t) =>
   assert.equal(snapshotB.event, 'snapshot');
 
   const write = await fetch(
-    `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/vocal-2`,
+    `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/back-vocals`,
     {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -242,7 +242,7 @@ test('two SSE clients receive the same authoritative level update', async (t) =>
     assert.equal(event.event, 'level');
     assert.equal(event.data.memberId, 'vocalist');
     assert.equal(event.data.mixId, 'vocalist');
-    assert.equal(event.data.sourceId, 'vocal-2');
+    assert.equal(event.data.sourceId, 'back-vocals');
     assert.equal(event.data.value, 0.63);
   }
 });
@@ -284,10 +284,10 @@ test('external bridge changes and bridge loss propagate through SSE and health',
   const stream = createSseReader(response);
   assert.equal((await stream.nextEvent()).event, 'snapshot');
 
-  app.bridge.simulateExternalChange('vocalist', 'vocal-1', 0.29);
+  app.bridge.simulateExternalChange('vocalist', 'main-vocals', 0.29);
   const external = await stream.nextEvent();
   assert.equal(external.event, 'level');
-  assert.equal(external.data.sourceId, 'vocal-1');
+  assert.equal(external.data.sourceId, 'main-vocals');
   assert.equal(external.data.value, 0.29);
 
   await app.bridge.stop();
@@ -300,7 +300,7 @@ test('external bridge changes and bridge loss propagate through SSE and health',
   assert.equal(health.value.ok, false);
 
   const write = await json(await fetch(
-    `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/vocal-1`,
+    `${app.baseUrl}/api/members/vocalist/mixes/vocalist/sources/main-vocals`,
     {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -322,5 +322,5 @@ test('external bridge changes and bridge loss propagate through SSE and health',
   }
   assert.equal(recovered?.event, 'snapshot');
   assert.equal(recovered.data.bridge.connected, true);
-  assert.equal(recovered.data.levels['vocal-1'], 0.29);
+  assert.equal(recovered.data.levels['main-vocals'], 0.29);
 });

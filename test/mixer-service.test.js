@@ -52,7 +52,7 @@ class SnapshotRaceMockBridge extends MockBridge {
     const staleSnapshot = super.getSnapshot(mixId);
     if (mixId === 'vocalist' && !this.changed) {
       this.changed = true;
-      this.simulateExternalChange('vocalist', 'vocal-1', 0.91);
+      this.simulateExternalChange('vocalist', 'main-vocals', 0.91);
     }
     return staleSnapshot;
   }
@@ -83,14 +83,14 @@ test('mixer service exposes only a member own configured mix', async (t) => {
   t.after(() => service.stop());
 
   const state = service.getState('vocalist', 'vocalist');
-  assert.equal(Object.keys(state.levels).length, 9);
+  assert.equal(Object.keys(state.levels).length, 10);
 
   assert.throws(
     () => service.getState('vocalist', 'drummer'),
     (error) => error.code === 'MIX_FORBIDDEN' && error.statusCode === 403,
   );
   await assert.rejects(
-    service.setLevel('missing', 'vocalist', 'vocal-1', 0.5),
+    service.setLevel('missing', 'vocalist', 'main-vocals', 0.5),
     (error) => error.code === 'MEMBER_NOT_FOUND' && error.statusCode === 404,
   );
   await assert.rejects(
@@ -103,12 +103,12 @@ test('mixer service clamps finite writes to configured safety limits', async (t)
   const { service } = await createService({ coalesceMs: 0 });
   t.after(() => service.stop());
 
-  const below = await service.setLevel('vocalist', 'vocalist', 'vocal-1', -10);
-  const above = await service.setLevel('vocalist', 'vocalist', 'vocal-1', 10);
+  const below = await service.setLevel('vocalist', 'vocalist', 'main-vocals', -10);
+  const above = await service.setLevel('vocalist', 'vocalist', 'main-vocals', 10);
 
   assert.equal(below.value, 0);
   assert.equal(above.value, 1);
-  assert.equal(service.getState('vocalist', 'vocalist').levels['vocal-1'], 1);
+  assert.equal(service.getState('vocalist', 'vocalist').levels['main-vocals'], 1);
 });
 
 test('mixer service rejects malformed non-numeric levels', async (t) => {
@@ -117,7 +117,7 @@ test('mixer service rejects malformed non-numeric levels', async (t) => {
 
   for (const value of ['0.5', null, Number.NaN, Number.POSITIVE_INFINITY]) {
     await assert.rejects(
-      service.setLevel('vocalist', 'vocalist', 'vocal-1', value),
+      service.setLevel('vocalist', 'vocalist', 'main-vocals', value),
       (error) => error.code === 'INVALID_LEVEL' && error.statusCode === 400,
     );
   }
@@ -148,33 +148,38 @@ test('writes for one send remain ordered when a newer value arrives in flight', 
   await service.start();
   t.after(() => service.stop());
 
-  const slowFirstWrite = service.setLevel('vocalist', 'vocalist', 'vocal-1', 0.2);
+  const slowFirstWrite = service.setLevel('vocalist', 'vocalist', 'main-vocals', 0.2);
   await delay(2);
-  const newerWrite = service.setLevel('vocalist', 'vocalist', 'vocal-1', 0.8);
+  const newerWrite = service.setLevel('vocalist', 'vocalist', 'main-vocals', 0.8);
   await Promise.all([slowFirstWrite, newerWrite]);
 
   assert.equal(bridge.maximumConcurrentWrites, 1);
-  assert.equal(service.getState('vocalist', 'vocalist').levels['vocal-1'], 0.8);
+  assert.equal(service.getState('vocalist', 'vocalist').levels['main-vocals'], 0.8);
 });
 
 test('a bridge write must return a matching authoritative confirmation', async () => {
   const raw = await exampleConfig();
   raw.server.writeCoalesceMs = 0;
   const config = validateConfig(raw);
+  const startingLevel = config.sources.find(({ id }) => id === 'main-vocals')
+    .startingLevels.vocalist;
 
   for (const confirmation of [
     undefined,
-    { mixId: 'drummer', sourceId: 'vocal-1', value: 0.4 },
-    { mixId: 'vocalist', sourceId: 'vocal-1', value: Number.NaN },
+    { mixId: 'drummer', sourceId: 'main-vocals', value: 0.4 },
+    { mixId: 'vocalist', sourceId: 'main-vocals', value: Number.NaN },
   ]) {
     const bridge = new InvalidConfirmationMockBridge(config, confirmation);
     const service = new MixerService({ config, bridge });
     await service.start();
     await assert.rejects(
-      service.setLevel('vocalist', 'vocalist', 'vocal-1', 0.4),
+      service.setLevel('vocalist', 'vocalist', 'main-vocals', 0.4),
       (error) => error.code === 'BRIDGE_UNAVAILABLE' && error.statusCode === 503,
     );
-    assert.equal(service.getState('vocalist', 'vocalist').levels['vocal-1'], 0.72);
+    assert.equal(
+      service.getState('vocalist', 'vocalist').levels['main-vocals'],
+      startingLevel,
+    );
     await service.stop();
   }
 });
@@ -187,12 +192,14 @@ test('an authoritative startup event is not overwritten by an older snapshot', a
   t.after(() => service.stop());
 
   const state = service.getState('vocalist', 'vocalist');
-  assert.equal(state.levels['vocal-1'], 0.91);
+  assert.equal(state.levels['main-vocals'], 0.91);
   assert.equal(state.revision, 1);
 });
 
 test('failed bridge startup reports an error and can be retried safely', async (t) => {
   const config = validateConfig(await exampleConfig());
+  const startingLevel = config.sources.find(({ id }) => id === 'main-vocals')
+    .startingLevels.vocalist;
   const bridge = new FlakyStartMockBridge(config);
   const service = new MixerService({ config, bridge });
   t.after(() => service.stop());
@@ -209,7 +216,10 @@ test('failed bridge startup reports an error and can be retried safely', async (
   const retryB = service.start();
   assert.equal(retryA, retryB);
   await retryA;
-  assert.equal(service.getState('vocalist', 'vocalist').levels['vocal-1'], 0.72);
+  assert.equal(
+    service.getState('vocalist', 'vocalist').levels['main-vocals'],
+    startingLevel,
+  );
 });
 
 test('service announces readiness only after every authoritative snapshot is available', async (t) => {

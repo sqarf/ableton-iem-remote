@@ -10,7 +10,39 @@ test('the example band configuration loads and validates', async () => {
   assert.equal(loaded.version, 1);
   assert.equal(loaded.members.length, 5);
   assert.equal(loaded.mixes.length, 5);
-  assert.equal(loaded.sources.length, 9);
+  assert.equal(loaded.sources.length, 10);
+  assert.deepEqual(
+    loaded.members.map(({ name }) => name),
+    ['Dans', 'Kristaps', 'Jānis', 'Oskars', 'Dāvis'],
+  );
+  assert.deepEqual(
+    loaded.mixes.map(({ name, abletonTrack }) => ({ name, abletonTrack })),
+    [
+      { name: 'Dans IEM', abletonTrack: 'IEM MIX - Dans' },
+      { name: 'Kristaps IEM', abletonTrack: 'IEM MIX - Kristaps' },
+      { name: 'Jānis IEM', abletonTrack: 'IEM MIX - Jānis' },
+      { name: 'Oskars IEM', abletonTrack: 'IEM MIX - Oskars' },
+      { name: 'Dāvis IEM', abletonTrack: 'IEM MIX - Dāvis' },
+    ],
+  );
+  assert.deepEqual(
+    loaded.sources.map(({ id, name, abletonTrack }) => ({ id, name, abletonTrack })),
+    [
+      { id: 'click', name: 'Click', abletonTrack: 'IEM SRC - Click' },
+      { id: 'guide-track', name: 'Guide Track', abletonTrack: 'IEM SRC - Guide Track' },
+      { id: 'coordinator', name: 'Coordinator', abletonTrack: 'IEM SRC - Coordinator' },
+      { id: 'main-vocals', name: 'Main Vocals', abletonTrack: 'IEM SRC - Main Vocals' },
+      { id: 'back-vocals', name: 'Back Vocals', abletonTrack: 'IEM SRC - Back Vocals' },
+      { id: 'guitar-1', name: 'Guitar 1', abletonTrack: 'IEM SRC - Guitar 1' },
+      { id: 'guitar-2', name: 'Guitar 2', abletonTrack: 'IEM SRC - Guitar 2' },
+      { id: 'bass', name: 'Bass', abletonTrack: 'IEM SRC - Bass' },
+      { id: 'kick', name: 'Kick', abletonTrack: 'IEM SRC - Kick' },
+      { id: 'samples', name: 'Samples', abletonTrack: 'IEM SRC - Samples' },
+    ],
+  );
+  assert.ok(loaded.sources.every((source) => (
+    Object.values(source.startingLevels).every((value) => value === 0)
+  )));
 });
 
 test('configuration rejects duplicate stable IDs', async () => {

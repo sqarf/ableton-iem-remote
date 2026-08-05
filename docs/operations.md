@@ -70,7 +70,7 @@ Then request a level and a reset:
 curl -i -X PUT \
   -H 'Content-Type: application/json' \
   --data '{"value":0.61}' \
-  http://127.0.0.1:3000/api/members/vocalist/mixes/vocalist/sources/vocal-1
+  http://127.0.0.1:3000/api/members/vocalist/mixes/vocalist/sources/main-vocals
 
 curl -i -X POST \
   http://127.0.0.1:3000/api/members/vocalist/mixes/vocalist/reset
@@ -86,7 +86,7 @@ with someone else's mix:
 curl -i -X PUT \
   -H 'Content-Type: application/json' \
   --data '{"value":0.5}' \
-  http://127.0.0.1:3000/api/members/vocalist/mixes/drummer/sources/vocal-1
+  http://127.0.0.1:3000/api/members/vocalist/mixes/drummer/sources/main-vocals
 ```
 
 That request must return an authorization/client error and must not emit a

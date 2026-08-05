@@ -131,7 +131,7 @@ test('Node-for-Max bootstrap serves the real stack and survives a full rescan', 
   assert.equal(health.ok, true);
 
   const writeResponse = await fetch(
-    `${baseUrl}/api/members/vocalist/mixes/vocalist/sources/vocal-1`,
+    `${baseUrl}/api/members/vocalist/mixes/vocalist/sources/main-vocals`,
     {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -142,7 +142,7 @@ test('Node-for-Max bootstrap serves the real stack and survives a full rescan', 
   assert.equal((await writeResponse.json()).value, 0.61);
 
   const forbiddenResponse = await fetch(
-    `${baseUrl}/api/members/vocalist/mixes/drummer/sources/vocal-1`,
+    `${baseUrl}/api/members/vocalist/mixes/drummer/sources/main-vocals`,
     {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -154,7 +154,7 @@ test('Node-for-Max bootstrap serves the real stack and survives a full rescan', 
   child.send({
     type: 'external-level',
     mixId: 'vocalist',
-    sourceId: 'vocal-1',
+    sourceId: 'main-vocals',
     value: 0.58,
   });
   let observedState;
@@ -162,10 +162,10 @@ test('Node-for-Max bootstrap serves the real stack and survives a full rescan', 
     observedState = await fetch(
       `${baseUrl}/api/members/vocalist/mixes/vocalist/state`,
     ).then((response) => response.json());
-    if (observedState.levels?.['vocal-1'] === 0.58) break;
+    if (observedState.levels?.['main-vocals'] === 0.58) break;
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 10));
   }
-  assert.equal(observedState.levels['vocal-1'], 0.58);
+  assert.equal(observedState.levels['main-vocals'], 0.58);
 
   const rescanStart = log.length;
   child.send({ type: 'invoke', selector: 'iem.server.rescan' });
@@ -182,7 +182,7 @@ test('Node-for-Max bootstrap serves the real stack and survives a full rescan', 
   const recoveredState = await fetch(
     `${baseUrl}/api/members/vocalist/mixes/vocalist/state`,
   ).then((response) => response.json());
-  assert.equal(recoveredState.levels['vocal-1'], 0.58);
+  assert.equal(recoveredState.levels['main-vocals'], 0.58);
 
   const automaticRecoveryStart = log.length;
   child.send({ type: 'disconnect' });
@@ -197,5 +197,5 @@ test('Node-for-Max bootstrap serves the real stack and survives a full rescan', 
   const automaticallyRecovered = await fetch(
     `${baseUrl}/api/members/vocalist/mixes/vocalist/state`,
   ).then((response) => response.json());
-  assert.equal(automaticallyRecovered.levels['vocal-1'], 0.58);
+  assert.equal(automaticallyRecovered.levels['main-vocals'], 0.58);
 });
